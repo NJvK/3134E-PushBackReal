@@ -7,19 +7,21 @@
 // R2 will score onto the higher side goals
 // X will expand the piston to take the balls out of the tube
 // Y will retract the piston
-#define LEFT_MOTOR_A_PORT 1
-#define LEFT_MOTOR_B_PORT 7
-#define LEFT_MOTOR_C_PORT 19
+#define LEFT_MOTOR_A_PORT 4
+#define LEFT_MOTOR_B_PORT 5
+#define LEFT_MOTOR_C_PORT 6
 
-#define RIGHT_MOTOR_A_PORT 15
-#define RIGHT_MOTOR_B_PORT 4
+#define RIGHT_MOTOR_A_PORT 7
+#define RIGHT_MOTOR_B_PORT 8
 #define RIGHT_MOTOR_C_PORT 9
 
 #define INERTIAL_PORT 21
 
-#define UPPER_INTAKE_PORT 16
+#define UPPER_INTAKE_PORT 1
 #define LOWER_INTAKE_PORT 3
-#define BASKET_PORT 10
+#define BASKET_PORT 15
+
+#define EXTENSION_PORT 'a'
 
 // #define ROTATION_PORT 5
 // #define ELEVATOR_PORT 19
@@ -29,13 +31,25 @@
 // pros::Motor Elevator(ELEVATOR_PORT);
 // pros::Motor HighStakes(port, pros::motor_gearset_e:: E_MOTOR_GEAR_RED);
 
-pros::MotorGroup LeftDriveSmart({-LEFT_MOTOR_A_PORT, LEFT_MOTOR_B_PORT, LEFT_MOTOR_C_PORT});     // Creates a motor group with forwards ports 1 & 4 and reversed port 7
+pros::MotorGroup LeftDriveSmart({LEFT_MOTOR_A_PORT, LEFT_MOTOR_B_PORT, LEFT_MOTOR_C_PORT});     // Creates a motor group with forwards ports 1 & 4 and reversed port 7
 pros::MotorGroup RightDriveSmart({RIGHT_MOTOR_A_PORT, RIGHT_MOTOR_B_PORT, RIGHT_MOTOR_C_PORT}); // Creates a motor group with forwards port 2 and reversed port 4 and 7
 pros::Imu Inertial(INERTIAL_PORT);
 pros::MotorGroup smartdrive({LEFT_MOTOR_A_PORT, LEFT_MOTOR_B_PORT, -LEFT_MOTOR_C_PORT, RIGHT_MOTOR_A_PORT, RIGHT_MOTOR_B_PORT, -RIGHT_MOTOR_C_PORT});
 pros::Motor Upper_Intake = UPPER_INTAKE_PORT;
 pros::Motor Lower_Intake = LOWER_INTAKE_PORT;
 pros::Motor Basket = BASKET_PORT;
+
+pros::ADIDigitalOut Extension({EXTENSION_PORT});
+
+bool extensionState = false;
+
+
+void ToggleExtension()
+{
+    extensionState = !extensionState;     // Toggle the state
+    Extension.set_value(extensionState); // Update the digital output
+    pros::delay(200);             // Delay for debouncing
+}
 /**
  * A callback function for LLEMU's centerk button.
  *
@@ -335,6 +349,7 @@ void opcontrol()
         // Control Clamp and Flag using buttons
         if (Controller1.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_X))
         {
+			ToggleExtension();
         }
         if (Controller1.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_Y))
         {
@@ -354,24 +369,38 @@ void opcontrol()
         if (Controller1.get_digital(pros::E_CONTROLLER_DIGITAL_L1))
         {
             Lower_Intake.move_velocity(200);
-			Upper_Intake.move_velocity(-200);
+			Upper_Intake.move_velocity(200);
 			Basket.move_velocity(200);
-        }
+        } 
         else if (Controller1.get_digital(pros::E_CONTROLLER_DIGITAL_L2))
         {
+			Lower_Intake.move_velocity(-200);
+			Basket.move_velocity(-200);
         }
         else
         {
+			Lower_Intake.move_velocity(0);
+			Upper_Intake.move_velocity(0);
+			Basket.move_velocity(0);
         }
 
         if (Controller1.get_digital(pros::E_CONTROLLER_DIGITAL_R1))
         {
+			Lower_Intake.move_velocity(200);
+			Upper_Intake.move_velocity(-200);
+			Basket.move_velocity(-200);
         }
         else if (Controller1.get_digital(pros::E_CONTROLLER_DIGITAL_R2))
         {
+			Lower_Intake.move_velocity(200);
+			Upper_Intake.move_velocity(200);
+			Basket.move_velocity(-200);
         }
         else
         {
+			Lower_Intake.move_velocity(0);
+			Upper_Intake.move_velocity(0);
+			Basket.move_velocity(0);
         }
 
         // Delay to prevent CPU overload
